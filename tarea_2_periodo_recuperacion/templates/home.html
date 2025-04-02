@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h2 class="card-title">Bienvenido, {{ username }}!</h2>
+        <p class="card-text">Chatea con otros usuarios</p>
+        
+        <div class="chat-box border rounded p-3" style="height: 400px; overflow-y: scroll; background-color: #f8f9fa;">
+            {% for message in messages %}
+                <div class="mb-2 {% if message.user == request.user %}text-end{% else %}text-start{% endif %}">
+                    <strong>{{ message.user.username }}</strong>: 
+                    <span class="badge bg-{% if message.user == request.user %}primary{% else %}secondary{% endif %}">
+                        {{ message.content }}
+                    </span>
+                    <small class="text-muted d-block">{{ message.timestamp }}</small>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <form method="POST" class="mt-3">
+            {% csrf_token %}
+            <div class="input-group">
+                <input type="text" name="content" class="form-control" placeholder="Escribe un mensaje...">
+                <button type="submit" class="btn btn-primary">Enviar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
