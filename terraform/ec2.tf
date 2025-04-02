@@ -1,15 +1,15 @@
 terraform {
-    required_providers {
+  required_providers {
     aws = {
-        source  = "hashicorp/aws"
+      source = "hashicorp/aws"
     }
-    }
-    required_version = ">= 1.2.0"
+  }
+  required_version = ">= 1.2.0"
 }
 
 provider "aws" {
-    shared_config_files      = ["/Users/Usuario/.aws/config"]
-    shared_credentials_files = ["/Users/Usuario/.aws/credentials"]
+  shared_config_files      = ["/Users/Usuario/.aws/config"]
+  shared_credentials_files = ["/Users/Usuario/.aws/credentials"]
 }
 
 resource "aws_instance" "web" {
@@ -19,41 +19,39 @@ resource "aws_instance" "web" {
   associate_public_ip_address = true
   security_groups             = [aws_security_group.grupo_seguridad.id]
   key_name                    = "clave"
-  
-  user_data = <<-EOF
-              #!/bin/bash
-              # Update system and install dependencies
-              apt-get update
-              apt-get install -y python3-pip python3-dev git
-              sudo -u ubuntu mkdir -p /home/ubuntu/django_app
-              cd /home/ubuntu/django_app
-              sudo -u ubuntu git clone https://github.com/DanielJimenez357/despliegue_django .
-              sudo -u ubuntu pip3 install django
-              cd tarea_2_periodo_recuperacion
-              sudo -u ubuntu python3 manage.py migrate
-              cat > /etc/systemd/system/django.service <<EOL
-              [Unit]
-              Description=Django Application Service
-              After=network.target
-              [Service]
-              User=ubuntu
-              Group=ubuntu
-              WorkingDirectory=/home/ubuntu/django_app/tarea_2_periodo_recuperacion
-              Environment=PATH=/home/ubuntu/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-              ExecStart=/home/ubuntu/.local/bin/python3 manage.py runserver 0.0.0.0:80
-              Restart=always
-              [Install]
-              WantedBy=multi-user.target
-              EOL
-              chown -R ubuntu:ubuntu /home/ubuntu/django_app
-              chmod -R 755 /home/ubuntu/django_app
-              chmod 644 /etc/systemd/system/django.service
-              systemctl daemon-reload
-              systemctl enable django
-              systemctl start django
-              systemctl status django
-              EOF
 
+  user_data = <<-EOF
+          #!/bin/bash
+          apt-get update
+          apt-get install -y python3-pip python3-dev git
+          
+          mkdir -p ~/django_app
+          cd ~/django_app
+          git clone https://github.com/DanielJimenez357/despliegue_django .
+          pip3 install django
+          
+          DJANGO_DIR=$(find ~/django_app -name manage.py -exec dirname {} \;)
+          
+          cat > /etc/systemd/system/django.service <<EOL
+          [Unit]
+          Description=Django Application Service
+          After=network.target
+          [Service]
+          User=$(whoami)
+          Group=$(whoami)
+          WorkingDirectory=$DJANGO_DIR
+          Environment=PATH=$HOME/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          ExecStart=$HOME/.local/bin/python3 manage.py runserver 0.0.0.0:80
+          Restart=always
+          [Install]
+          WantedBy=multi-user.target
+          EOL
+          
+          chmod 644 /etc/systemd/system/django.service
+          systemctl daemon-reload
+          systemctl enable django
+          systemctl start django
+        EOF
   tags = {
     Name = "django-server"
   }
