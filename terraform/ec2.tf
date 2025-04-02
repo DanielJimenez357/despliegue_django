@@ -22,33 +22,36 @@ resource "aws_instance" "web" {
   
   user_data = <<-EOF
               #!/bin/bash
+              # Update system and install dependencies
               apt-get update
               apt-get install -y python3-pip python3-dev git
-              mkdir -p /home/ubuntu/django_app
+              sudo -u ubuntu mkdir -p /home/ubuntu/django_app
               cd /home/ubuntu/django_app
-              git clone https://github.com/DanielJimenez357/despliegue_django .
+              sudo -u ubuntu git clone https://github.com/DanielJimenez357/despliegue_django .
+              sudo -u ubuntu pip3 install django
               cd tarea_2_periodo_recuperacion
-              pip3 install django
-              python3 manage.py migrate
+              sudo -u ubuntu python3 manage.py migrate
               cat > /etc/systemd/system/django.service <<EOL
               [Unit]
               Description=Django Application Service
               After=network.target
               [Service]
-              Type=simple
               User=ubuntu
               Group=ubuntu
               WorkingDirectory=/home/ubuntu/django_app/tarea_2_periodo_recuperacion
-              ExecStart=/usr/bin/python3 manage.py runserver 0.0.0.0:80
+              Environment=PATH=/home/ubuntu/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              ExecStart=/home/ubuntu/.local/bin/python3 manage.py runserver 0.0.0.0:80
               Restart=always
               [Install]
               WantedBy=multi-user.target
               EOL
               chown -R ubuntu:ubuntu /home/ubuntu/django_app
               chmod -R 755 /home/ubuntu/django_app
+              chmod 644 /etc/systemd/system/django.service
               systemctl daemon-reload
               systemctl enable django
               systemctl start django
+              systemctl status django
               EOF
 
   tags = {
